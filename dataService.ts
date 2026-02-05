@@ -1,53 +1,40 @@
+import { Part, Student, Transaction, StudentWithdrawal } from './types';
+import { db_firestore } from './firebase'; 
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
-import { Student, Part, Transaction, StudentWithdrawal } from './types';
+async function saveToFirebase(collectionName: string, data: any[]): Promise<void> {
+  try {
+    const docRef = doc(db_firestore, 'storage', collectionName);
+    await setDoc(docRef, { 
+      items: data,
+      lastUpdate: new Date().toISOString() 
+    });
+    console.log(`✅ Sucesso: ${collectionName} atualizado.`);
+  } catch (error) {
+    console.error("❌ Erro ao salvar no Firebase:", error);
+  }
+}
 
-const STORAGE_KEYS = {
-  STUDENTS: 'usinagem_students',
-  PARTS: 'usinagem_parts',
-  TRANSACTIONS: 'usinagem_transactions',
-  WITHDRAWALS: 'usinagem_withdrawals'
-};
-
-const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+async function getFromFirebase<T>(collectionName: string, initialData: T[]): Promise<T[]> {
+  try {
+    const docRef = doc(db_firestore, 'storage', collectionName);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return (docSnap.data().items as T[]) || initialData;
+    }
+    return initialData;
+  } catch (error) {
+    return initialData;
+  }
+}
 
 export const db = {
-  getStudents: async (): Promise<Student[]> => {
-    await delay(300);
-    const data = localStorage.getItem(STORAGE_KEYS.STUDENTS);
-    return data ? JSON.parse(data) : [];
-  },
-  saveStudents: async (data: Student[]) => {
-    await delay(300);
-    localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(data));
-  },
-  getParts: async (): Promise<Part[]> => {
-    await delay(300);
-    const data = localStorage.getItem(STORAGE_KEYS.PARTS);
-    return data ? JSON.parse(data) : [
-      { id: 'T1', code: 'USI-001', name: 'Eixo de Transmissão', targetQuantity: 20 },
-      { id: 'T2', code: 'USI-002', name: 'Bucha Cilíndrica', targetQuantity: 20 }
-    ];
-  },
-  saveParts: async (data: Part[]) => {
-    await delay(300);
-    localStorage.setItem(STORAGE_KEYS.PARTS, JSON.stringify(data));
-  },
-  getTransactions: async (): Promise<Transaction[]> => {
-    await delay(300);
-    const data = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
-    return data ? JSON.parse(data) : [];
-  },
-  saveTransactions: async (data: Transaction[]) => {
-    await delay(300);
-    localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(data));
-  },
-  getWithdrawals: async (): Promise<StudentWithdrawal[]> => {
-    await delay(300);
-    const data = localStorage.getItem(STORAGE_KEYS.WITHDRAWALS);
-    return data ? JSON.parse(data) : [];
-  },
-  saveWithdrawals: async (data: StudentWithdrawal[]) => {
-    await delay(300);
-    localStorage.setItem(STORAGE_KEYS.WITHDRAWALS, JSON.stringify(data));
-  }
+  async getParts(): Promise<Part[]> { return getFromFirebase<Part>('parts', []); },
+  async saveParts(parts: Part[]): Promise<void> { await saveToFirebase('parts', parts); },
+  async getStudents(): Promise<Student[]> { return getFromFirebase<Student>('students', []); },
+  async saveStudents(students: Student[]): Promise<void> { await saveToFirebase('students', students); },
+  async getTransactions(): Promise<Transaction[]> { return getFromFirebase<Transaction>('transactions', []); },
+  async saveTransactions(transactions: Transaction[]): Promise<void> { await saveToFirebase('transactions', transactions); },
+  async getWithdrawals(): Promise<StudentWithdrawal[]> { return getFromFirebase<StudentWithdrawal>('withdrawals', []); },
+  async saveWithdrawals(withdrawals: StudentWithdrawal[]): Promise<void> { await saveToFirebase('withdrawals', withdrawals); }
 };

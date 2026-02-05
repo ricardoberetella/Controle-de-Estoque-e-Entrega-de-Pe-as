@@ -4,6 +4,13 @@ export enum TransactionType {
   EXIT = 'SAÍDA'
 }
 
+export interface Part {
+  id: string; // e.g., T1, T2
+  code: string;
+  name: string;
+  targetQuantity: number; // For "Necessidade Início de Turma"
+}
+
 export interface Transaction {
   id: string;
   date: string;
@@ -16,20 +23,13 @@ export interface Transaction {
 export interface Student {
   id: string;
   name: string;
-  class: string;
+  class: string; // e.g., "Turma A - Manhã"
 }
 
 export interface StudentWithdrawal {
   studentId: string;
   partId: string;
   date: string;
-}
-
-export interface Part {
-  id: string;
-  code: string;
-  name: string;
-  targetQuantity: number;
 }
 
 export interface StockSummary {
