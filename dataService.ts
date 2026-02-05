@@ -52,3 +52,12 @@ export const db = {
     await saveToFirebase('withdrawals', withdrawals);
   }
 };
+async function saveToFirebase(collectionName: string, data: any[]) {
+  try {
+    console.log(`Tentando salvar ${collectionName}:`, data); // <-- Adicione esta linha
+    await setDoc(doc(db_firestore, 'storage', collectionName), { items: data });
+    console.log("Salvo com sucesso!"); // <-- Adicione esta linha
+  } catch (error) {
+    console.error("Erro ao salvar no Firebase:", error);
+  }
+}
