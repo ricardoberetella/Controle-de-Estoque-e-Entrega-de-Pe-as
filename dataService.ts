@@ -9,9 +9,8 @@ async function saveToFirebase(collectionName: string, data: any[]): Promise<void
       items: data,
       lastUpdate: new Date().toISOString() 
     });
-    console.log(`✅ ${collectionName} salvo!`);
   } catch (error) {
-    console.error("Erro ao salvar:", error);
+    console.error(`Erro ao salvar ${collectionName}:`, error);
   }
 }
 
