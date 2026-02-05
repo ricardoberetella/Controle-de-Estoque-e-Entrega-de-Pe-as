@@ -12,5 +12,8 @@ const firebaseConfig = {
   measurementId: "G-GFCPSFCFJF"
 };
 
+// Inicializa o Firebase
 const app = initializeApp(firebaseConfig);
+
+// Exporta a referência do banco de dados (Realtime Database)
 export const rtdb = getDatabase(app);
