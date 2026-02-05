@@ -17,7 +17,7 @@ async function getFromFirebase<T>(collectionName: string, initialData: T[]): Pro
   try {
     const docRef = doc(db_firestore, 'storage', collectionName);
     const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
+    if (docSnap.exists() && docSnap.data()?.items) {
       return docSnap.data().items as T[];
     }
     return initialData;
