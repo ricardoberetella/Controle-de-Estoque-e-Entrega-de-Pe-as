@@ -1,53 +1,44 @@
+import { db } from "./firebaseConfig";
+import { doc, getDoc, updateDoc, setDoc, arrayUnion } from "firebase/firestore";
 
-import { Student, Part, Transaction, StudentWithdrawal } from './types';
+// Nome da coleção e documento baseados na sua imagem
+const COLLECTION_NAME = "storage";
+const DOCUMENT_ID = "parts";
 
-const STORAGE_KEYS = {
-  STUDENTS: 'usinagem_students',
-  PARTS: 'usinagem_parts',
-  TRANSACTIONS: 'usinagem_transactions',
-  WITHDRAWALS: 'usinagem_withdrawals'
-};
+export const dataService = {
+  // Função para salvar uma nova peça/item
+  async addPart(newPart: any) {
+    try {
+      const docRef = doc(db, COLLECTION_NAME, DOCUMENT_ID);
+      const docSnap = await getDoc(docRef);
 
-const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+      if (docSnap.exists()) {
+        // Se o documento existe, adiciona ao array 'items'
+        await updateDoc(docRef, {
+          items: arrayUnion(newPart)
+        });
+      } else {
+        // Se o documento não existir, cria o primeiro
+        await setDoc(docRef, {
+          items: [newPart]
+        });
+      }
+      return { success: true };
+    } catch (error) {
+      console.error("Erro ao salvar no Firestore:", error);
+      throw error;
+    }
+  },
 
-export const db = {
-  getStudents: async (): Promise<Student[]> => {
-    await delay(300);
-    const data = localStorage.getItem(STORAGE_KEYS.STUDENTS);
-    return data ? JSON.parse(data) : [];
-  },
-  saveStudents: async (data: Student[]) => {
-    await delay(300);
-    localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(data));
-  },
-  getParts: async (): Promise<Part[]> => {
-    await delay(300);
-    const data = localStorage.getItem(STORAGE_KEYS.PARTS);
-    return data ? JSON.parse(data) : [
-      { id: 'T1', code: 'USI-001', name: 'Eixo de Transmissão', targetQuantity: 20 },
-      { id: 'T2', code: 'USI-002', name: 'Bucha Cilíndrica', targetQuantity: 20 }
-    ];
-  },
-  saveParts: async (data: Part[]) => {
-    await delay(300);
-    localStorage.setItem(STORAGE_KEYS.PARTS, JSON.stringify(data));
-  },
-  getTransactions: async (): Promise<Transaction[]> => {
-    await delay(300);
-    const data = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
-    return data ? JSON.parse(data) : [];
-  },
-  saveTransactions: async (data: Transaction[]) => {
-    await delay(300);
-    localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(data));
-  },
-  getWithdrawals: async (): Promise<StudentWithdrawal[]> => {
-    await delay(300);
-    const data = localStorage.getItem(STORAGE_KEYS.WITHDRAWALS);
-    return data ? JSON.parse(data) : [];
-  },
-  saveWithdrawals: async (data: StudentWithdrawal[]) => {
-    await delay(300);
-    localStorage.setItem(STORAGE_KEYS.WITHDRAWALS, JSON.stringify(data));
+  // Função para buscar os dados em tempo real ou uma vez
+  async getParts() {
+    try {
+      const docRef = doc(db, COLLECTION_NAME, DOCUMENT_ID);
+      const docSnap = await getDoc(docRef);
+      return docSnap.exists() ? docSnap.data().items : [];
+    } catch (error) {
+      console.error("Erro ao buscar dados:", error);
+      return [];
+    }
   }
 };
