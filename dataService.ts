@@ -1,57 +1,54 @@
-
 import { Part, Student, Transaction, StudentWithdrawal } from './types';
-import { INITIAL_PARTS, INITIAL_STUDENTS } from './constants';
+import { db_firestore } from './firebase'; // Importando a conexão que você criou
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
-// Simulação de latência de rede para testar UX de carregamento
-const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+// Função auxiliar para salvar no Google
+async function saveToFirebase(collectionName: string, data: any[]) {
+  try {
+    await setDoc(doc(db_firestore, 'storage', collectionName), { items: data });
+  } catch (error) {
+    console.error("Erro ao salvar no Firebase:", error);
+  }
+}
 
-/**
- * DATABASE SERVICE
- * Atualmente simulando persistência local, mas estruturado para 
- * chamadas de API reais (fetch/axios) ou SDKs de Cloud (Firebase).
- */
+// Função auxiliar para buscar do Google
+async function getFromFirebase(collectionName: string, initialData: any[]) {
+  try {
+    const docRef = doc(db_firestore, 'storage', collectionName);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data().items;
+    }
+    return initialData;
+  } catch (error) {
+    console.error("Erro ao buscar do Firebase:", error);
+    return initialData;
+  }
+}
+
 export const db = {
   async getParts(): Promise<Part[]> {
-    await delay(500);
-    const data = localStorage.getItem('senai_parts');
-    return data ? JSON.parse(data) : INITIAL_PARTS;
+    return getFromFirebase('parts', []);
   },
-
   async saveParts(parts: Part[]): Promise<void> {
-    await delay(300);
-    localStorage.setItem('senai_parts', JSON.stringify(parts));
+    await saveToFirebase('parts', parts);
   },
-
   async getStudents(): Promise<Student[]> {
-    await delay(600);
-    const data = localStorage.getItem('senai_students');
-    return data ? JSON.parse(data) : INITIAL_STUDENTS;
+    return getFromFirebase('students', []);
   },
-
   async saveStudents(students: Student[]): Promise<void> {
-    await delay(300);
-    localStorage.setItem('senai_students', JSON.stringify(students));
+    await saveToFirebase('students', students);
   },
-
   async getTransactions(): Promise<Transaction[]> {
-    await delay(400);
-    const data = localStorage.getItem('senai_transactions');
-    return data ? JSON.parse(data) : [];
+    return getFromFirebase('transactions', []);
   },
-
   async saveTransactions(transactions: Transaction[]): Promise<void> {
-    await delay(300);
-    localStorage.setItem('senai_transactions', JSON.stringify(transactions));
+    await saveToFirebase('transactions', transactions);
   },
-
   async getWithdrawals(): Promise<StudentWithdrawal[]> {
-    await delay(450);
-    const data = localStorage.getItem('senai_withdrawals');
-    return data ? JSON.parse(data) : [];
+    return getFromFirebase('withdrawals', []);
   },
-
   async saveWithdrawals(withdrawals: StudentWithdrawal[]): Promise<void> {
-    await delay(300);
-    localStorage.setItem('senai_withdrawals', JSON.stringify(withdrawals));
+    await saveToFirebase('withdrawals', withdrawals);
   }
 };
