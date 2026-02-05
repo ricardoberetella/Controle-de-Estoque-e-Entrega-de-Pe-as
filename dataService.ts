@@ -4,21 +4,20 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 async function saveToFirebase(collectionName: string, data: any[]): Promise<void> {
   try {
-    // Salvamos tudo dentro de um documento chamado 'main' para facilitar a organização
-    const docRef = doc(db_firestore, collectionName, 'main');
+    const docRef = doc(db_firestore, 'storage', collectionName);
     await setDoc(docRef, { 
       items: data,
       lastUpdate: new Date().toISOString() 
     });
-    console.log(`Dados salvos em: ${collectionName}`);
+    console.log(`✅ Sucesso: ${collectionName} atualizado.`);
   } catch (error) {
-    console.error("Erro ao salvar no Firebase:", error);
+    console.error("❌ Erro ao salvar no Firebase:", error);
   }
 }
 
 async function getFromFirebase<T>(collectionName: string, initialData: T[]): Promise<T[]> {
   try {
-    const docRef = doc(db_firestore, collectionName, 'main');
+    const docRef = doc(db_firestore, 'storage', collectionName);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       return (docSnap.data().items as T[]) || initialData;
