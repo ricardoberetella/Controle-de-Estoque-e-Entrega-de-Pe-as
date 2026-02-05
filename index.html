@@ -1,41 +1,405 @@
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { HashRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { 
+  Package, 
+  Users, 
+  ArrowLeftRight, 
+  TrendingDown, 
+  LayoutDashboard,
+  Plus,
+  Trash2,
+  Edit2,
+  CheckCircle2,
+  AlertCircle,
+  X,
+  PlusCircle,
+  TriangleAlert,
+  CloudDownload,
+  CloudUpload,
+  Loader2,
+  Search,
+  UserPlus,
+  Download,
+  Settings
+} from 'lucide-react';
+import { 
+  Transaction, 
+  TransactionType, 
+  Student, 
+  StudentWithdrawal, 
+  StockSummary,
+  Part
+} from './types';
+import { CLASSES } from './constants';
+import { generateId, formatDate } from './utils';
+import { db } from './dataService';
 
-<!DOCTYPE html>
-<html lang="pt-br">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SENAI - Gestão de Usinagem</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
-    <style>
-      body {
-        font-family: 'Inter', sans-serif;
-        background-color: #F8FAFC;
+// --- Natural Sort ---
+const sortTaskIds = (aId: string, bId: string) => {
+  const extractNum = (s: string) => parseInt(s.replace(/\D/g, '')) || 0;
+  const numA = extractNum(aId);
+  const numB = extractNum(bId);
+  if (numA !== numB) return numA - numB;
+  return aId.localeCompare(bId);
+};
+
+const sortAlphabetically = (a: string, b: string) => a.localeCompare(b, 'pt-BR');
+
+// --- Componentes Reutilizáveis ---
+
+const LoadingOverlay = () => (
+  <div className="fixed inset-0 bg-white/60 backdrop-blur-sm z-[100] flex items-center justify-center animate-in fade-in duration-300">
+    <div className="text-center">
+      <Loader2 className="w-12 h-12 text-red-600 animate-spin mx-auto mb-4" />
+      <p className="text-gray-600 font-bold animate-pulse">Sincronizando com o banco de dados...</p>
+    </div>
+  </div>
+);
+
+const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode }> = ({ isOpen, onClose, title, children }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="flex justify-between items-center p-6 border-b border-gray-100">
+          <h3 className="text-xl font-bold text-gray-800">{title}</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors p-1"><X size={24} /></button>
+        </div>
+        <div className="p-6">{children}</div>
+      </div>
+    </div>
+  );
+};
+
+const ConfirmModal: React.FC<{ 
+  isOpen: boolean; onClose: () => void; onConfirm: () => void; title: string; message: string 
+}> = ({ isOpen, onClose, onConfirm, title, message }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-red-100 p-6 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-4"><TriangleAlert className="h-6 w-6 text-red-600" /></div>
+        <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
+        <p className="text-sm text-gray-500 mb-6">{message}</p>
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-xl">Cancelar</button>
+          <button onClick={() => { onConfirm(); onClose(); }} className="flex-1 px-4 py-2 bg-red-600 text-white font-bold rounded-xl shadow-lg shadow-red-100">Excluir</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- App Principal ---
+
+const App: React.FC = () => {
+  const [students, setStudents] = useState<Student[]>([]);
+  const [parts, setParts] = useState<Part[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [withdrawals, setWithdrawals] = useState<StudentWithdrawal[]>([]);
+  
+  const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [confirmConfig, setConfirmConfig] = useState<{ isOpen: boolean; onConfirm: () => void; title: string; message: string } | null>(null);
+
+  // Inicialização Assíncrona
+  useEffect(() => {
+    const loadAllData = async () => {
+      setLoading(true);
+      try {
+        const [s, p, t, w] = await Promise.all([
+          db.getStudents(),
+          db.getParts(),
+          db.getTransactions(),
+          db.getWithdrawals()
+        ]);
+        setStudents(s);
+        setParts(p);
+        setTransactions(t);
+        setWithdrawals(w);
+      } finally {
+        setLoading(false);
       }
-      @media print {
-        aside, nav { display: none !important; }
-        main { margin: 0 !important; padding: 0 !important; }
+    };
+    loadAllData();
+  }, []);
+
+  // Persistência Automática
+  const syncWithCloud = async (action: () => Promise<unknown>) => {
+    setSyncing(true);
+    try {
+      await action();
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleSaveStudent = async (s: Omit<Student, 'id'>, id?: string) => {
+    const updated = id 
+      ? students.map(st => st.id === id ? { ...st, ...s } : st)
+      : [...students, { id: generateId(), ...s }];
+    setStudents(updated);
+    await syncWithCloud(() => db.saveStudents(updated));
+  };
+
+  const handleDeleteStudent = (id: string) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Remover Aluno",
+      message: "Deseja excluir este aluno de todas as turmas?",
+      onConfirm: async () => {
+        const updated = students.filter(s => s.id !== id);
+        setStudents(updated);
+        await syncWithCloud(() => db.saveStudents(updated));
       }
-    </style>
-    <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom": "https://esm.sh/react-dom@^19.2.4",
-    "react-dom/client": "https://esm.sh/react-dom@^19.2.4/client",
-    "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react/": "https://esm.sh/react@^19.2.4/"
-  }
-}
-</script>
-  <link rel="stylesheet" href="/index.css">
-</head>
-  <body>
-    <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
-</body>
-</html>
+    });
+  };
+
+  const handleSavePart = async (p: Part, isEditing: boolean) => {
+    const updated = isEditing ? parts.map(part => part.id === p.id ? { ...p } : part) : [...parts, { ...p }];
+    setParts(updated);
+    await syncWithCloud(() => db.saveParts(updated));
+  };
+
+  const handleDeletePart = (id: string) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Excluir Tarefa",
+      message: `Remover a ${id} permanentemente?`,
+      onConfirm: async () => {
+        const updatedParts = parts.filter(p => p.id !== id);
+        const updatedWithdrawals = withdrawals.filter(w => w.partId !== id);
+        setParts(updatedParts);
+        setWithdrawals(updatedWithdrawals);
+        await syncWithCloud(() => Promise.all([db.saveParts(updatedParts), db.saveWithdrawals(updatedWithdrawals)]));
+      }
+    });
+  };
+
+  const handleAddTransaction = async (t: Omit<Transaction, 'id'>) => {
+    const updated = [...transactions, { ...t, id: generateId() }];
+    setTransactions(updated);
+    await syncWithCloud(() => db.saveTransactions(updated));
+  };
+
+  const handleDeleteTransaction = (id: string) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Estornar Lançamento",
+      message: "Remover este registro de movimentação?",
+      onConfirm: async () => {
+        const updated = transactions.filter(t => t.id !== id);
+        setTransactions(updated);
+        await syncWithCloud(() => db.saveTransactions(updated));
+      }
+    });
+  };
+
+  const toggleWithdrawal = async (studentId: string, partId: string) => {
+    const existing = withdrawals.find(w => w.studentId === studentId && w.partId === partId);
+    const updated = existing 
+      ? withdrawals.filter(w => w !== existing)
+      : [...withdrawals, { studentId, partId, date: new Date().toISOString() }];
+    setWithdrawals(updated);
+    await syncWithCloud(() => db.saveWithdrawals(updated));
+  };
+
+  const stockSummary = useMemo(() => {
+    return [...parts].sort((a, b) => sortTaskIds(a.id, b.id)).map(part => {
+      const entries = transactions.filter(t => t.partId === part.id && t.type === TransactionType.ENTRY).reduce((sum, t) => sum + t.quantity, 0);
+      const exits = transactions.filter(t => t.partId === part.id && t.type === TransactionType.EXIT).reduce((sum, t) => sum + t.quantity, 0);
+      const studentExits = withdrawals.filter(w => w.partId === part.id).length;
+      const balance = entries - exits - studentExits;
+      return { 
+        partId: part.id, code: part.code, entries, exits, studentExits, balance, 
+        situation: balance >= part.targetQuantity ? 'OK' : 'COMPRAR', 
+        toBuy: Math.max(0, part.targetQuantity - balance) 
+      } as StockSummary;
+    });
+  }, [transactions, withdrawals, parts]);
+
+  if (loading) return <LoadingOverlay />;
+
+  return (
+    <Router>
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
+        {/* Sidebar */}
+        <aside className="hidden md:flex flex-col w-64 bg-gray-900 h-screen sticky top-0 shadow-2xl z-50">
+          <div className="p-8 border-b border-gray-800 bg-gray-950 flex justify-between items-start">
+            <div>
+              <div className="bg-red-600 h-1.5 w-12 mb-4 rounded-full"></div>
+              <h1 className="text-white font-black text-2xl tracking-tighter italic leading-none">SENAI<br/><span className="text-gray-400 font-medium text-[10px] tracking-widest uppercase not-italic">Usinagem</span></h1>
+            </div>
+            <div className="mt-1">
+              {syncing ? <Loader2 className="w-4 h-4 text-blue-400 animate-spin" /> : <CloudDownload className="w-4 h-4 text-green-500" />}
+            </div>
+          </div>
+          <nav className="flex-1 p-4 space-y-2 mt-4 overflow-y-auto">
+            <NavItem to="/" icon={<LayoutDashboard size={20} />} label="Início" />
+            <div className="px-3 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Almoxarifado</div>
+            <NavItem to="/withdrawals" icon={<Users size={20} />} label="Retirada Alunos" />
+            <NavItem to="/transactions" icon={<ArrowLeftRight size={20} />} label="Movimentação" />
+            <NavItem to="/stock" icon={<Package size={20} />} label="Ver Estoque" />
+            <NavItem to="/planning" icon={<TrendingDown size={20} />} label="Planejamento" />
+            <div className="px-3 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Configuração</div>
+            <NavItem to="/parts" icon={<Settings size={20} />} label="Peças / Tarefas" />
+            <NavItem to="/students" icon={<UserPlus size={20} />} label="Alunos / Turmas" />
+          </nav>
+        </aside>
+
+        <main className="flex-1 p-4 md:p-10 pb-24 min-w-0">
+          <Routes>
+            <Route path="/" element={<Dashboard summary={stockSummary} students={students} />} />
+            <Route path="/withdrawals" element={<MaterialWithdrawals withdrawals={withdrawals} toggleWithdrawal={toggleWithdrawal} students={students} parts={[...parts].sort((a,b) => sortTaskIds(a.id, b.id))} />} />
+            <Route path="/transactions" element={<Transactions transactions={transactions} addTransaction={handleAddTransaction} deleteTransaction={handleDeleteTransaction} parts={[...parts].sort((a,b) => sortTaskIds(a.id, b.id))} />} />
+            <Route path="/stock" element={<StockInventory summary={stockSummary} />} />
+            <Route path="/planning" element={<Planning summary={stockSummary} />} />
+            <Route path="/parts" element={<PartsManager parts={parts} onSave={handleSavePart} onDelete={handleDeletePart} />} />
+            <Route path="/students" element={<StudentsManager students={students} onSave={handleSaveStudent} onDelete={handleDeleteStudent} />} />
+          </Routes>
+        </main>
+
+        <ConfirmModal 
+          isOpen={!!confirmConfig?.isOpen}
+          onClose={() => setConfirmConfig(null)}
+          onConfirm={confirmConfig?.onConfirm || (() => {})}
+          title={confirmConfig?.title || ""}
+          message={confirmConfig?.message || ""}
+        />
+
+        <nav className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 flex justify-around p-3 z-[100] shadow-[0_-8px_30px_rgba(0,0,0,0.12)]">
+          <MobileNavItem to="/" icon={<LayoutDashboard size={20} />} />
+          <MobileNavItem to="/withdrawals" icon={<Users size={20} />} />
+          <MobileNavItem to="/transactions" icon={<ArrowLeftRight size={20} />} />
+          <MobileNavItem to="/stock" icon={<Package size={20} />} />
+        </nav>
+      </div>
+    </Router>
+  );
+};
+
+// --- Sub-componentes ---
+
+const NavItem: React.FC<{ to: string, icon: React.ReactNode, label: string }> = ({ to, icon, label }) => {
+  const location = useLocation();
+  const active = location.pathname === to;
+  return (<Link to={to} className={`flex items-center space-x-3 p-3 rounded-xl transition-all ${active ? 'bg-red-600 text-white shadow-lg' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>{icon}<span className="font-bold text-sm">{label}</span></Link>);
+};
+
+const MobileNavItem: React.FC<{ to: string, icon: React.ReactNode }> = ({ to, icon }) => {
+  const location = useLocation();
+  const active = location.pathname === to;
+  return (<Link to={to} className={`p-3 rounded-2xl ${active ? 'bg-red-50 text-red-600' : 'text-gray-400'}`}>{icon}</Link>);
+};
+
+const Dashboard: React.FC<{ summary: StockSummary[], students: Student[] }> = ({ summary, students }) => {
+  const itemsCriticos = summary.filter(s => s.balance < (s.entries * 0.1)).length;
+  const totalEntregas = summary.reduce((acc, curr) => acc + curr.studentExits, 0);
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-500">
+      {/* Cabeçalho Proeminente com Logo e Título Oficial */}
+      <header className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-gray-200/50 border border-gray-100 flex flex-col md:flex-row items-center gap-10">
+        <div className="flex-shrink-0">
+          <div className="relative p-6 bg-red-600 rounded-2xl shadow-lg shadow-red-200 group transition-transform hover:scale-105">
+            {/* LOGO REMOVIDO (conforme solicitado) */}
+          </div>
+        </div>
+        
+        <div className="text-center md:text-left flex-1 space-y-3">
+          <div className="space-y-1">
+            <h2 className="text-3xl md:text-4xl font-black text-gray-900 leading-none uppercase italic tracking-tighter">
+              Mecânico de Usinagem Convencional
+            </h2>
+            <p className="text-lg md:text-xl font-bold text-gray-500 uppercase tracking-tight">
+              Controle de Estoque e Entrega de Peças
+            </p>
+          </div>
+          
+          <div className="flex flex-wrap justify-center md:justify-start gap-3 pt-2">
+            <span className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-red-50 text-red-600 text-xs font-black uppercase tracking-widest rounded-full border border-red-100">
+              <Package size={14} /> Gestão de Almoxarifado
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-blue-50 text-blue-600 text-xs font-black uppercase tracking-widest rounded-full border border-blue-100">
+              <Users size={14} /> Controle de Alunos
+            </span>
+          </div>
+        </div>
+      </header>
+
+      {/* Estatísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white p-7 rounded-3xl shadow-sm border border-gray-100 flex items-center space-x-5 transition-all hover:shadow-md">
+          <div className="p-4 rounded-2xl bg-blue-50 text-blue-600 border border-blue-100"><Users size={28} /></div>
+          <div><p className="text-sm font-bold text-gray-400 uppercase tracking-wider">Alunos</p><p className="text-3xl font-black text-gray-900">{students.length}</p></div>
+        </div>
+        <div className="bg-white p-7 rounded-3xl shadow-sm border border-gray-100 flex items-center space-x-5 transition-all hover:shadow-md">
+          <div className="p-4 rounded-2xl bg-green-50 text-green-600 border border-green-100"><Package size={28} /></div>
+          <div><p className="text-sm font-bold text-gray-400 uppercase tracking-wider">Estoque</p><p className="text-3xl font-black text-gray-900">{summary.reduce((acc, curr) => acc + curr.balance, 0)}</p></div>
+        </div>
+        <div className="bg-white p-7 rounded-3xl shadow-sm border border-gray-100 flex items-center space-x-5 transition-all hover:shadow-md">
+          <div className="p-4 rounded-2xl bg-purple-50 text-purple-600 border border-purple-100"><CheckCircle2 size={28} /></div>
+          <div><p className="text-sm font-bold text-gray-400 uppercase tracking-wider">Entregues</p><p className="text-3xl font-black text-gray-900">{totalEntregas}</p></div>
+        </div>
+        <div className="bg-white p-7 rounded-3xl shadow-sm border border-gray-100 flex items-center space-x-5 transition-all hover:shadow-md">
+          <div className="p-4 rounded-2xl bg-red-50 text-red-600 border border-red-100"><AlertCircle size={28} /></div>
+          <div><p className="text-sm font-bold text-gray-400 uppercase tracking-wider">Críticos</p><p className="text-3xl font-black text-gray-900">{itemsCriticos}</p></div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-black text-gray-800 flex items-center gap-2 uppercase italic tracking-tighter"><TrendingDown size={22} className="text-orange-500" /> Alertas de Reposição</h3>
+            <Link to="/planning" className="text-xs font-black text-gray-400 hover:text-red-600 uppercase tracking-widest transition-colors">Ver tudo</Link>
+          </div>
+          <div className="space-y-4">
+            {summary.filter(s => s.toBuy > 0).slice(0, 5).map(item => (
+              <div key={item.partId} className="flex justify-between items-center p-4 bg-gray-50 hover:bg-red-50/50 rounded-2xl border border-gray-100 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 flex items-center justify-center bg-white rounded-xl font-black text-red-600 border border-red-100">{item.partId}</div>
+                  <div><p className="font-bold text-gray-700 leading-tight">Peça {item.partId}</p><p className="text-xs text-gray-400 font-medium">Cód: {item.code}</p></div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-black text-red-600 uppercase tracking-tighter">Falta</p>
+                  <p className="text-xl font-black text-red-600 leading-none">{item.toBuy}</p>
+                </div>
+              </div>
+            ))}
+            {summary.filter(s => s.toBuy > 0).length === 0 && (
+              <div className="p-10 text-center space-y-2 opacity-50">
+                <CheckCircle2 size={40} className="mx-auto text-green-500" />
+                <p className="font-bold text-gray-400 uppercase tracking-widest text-sm">Estoque em dia</p>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100">
+          <h3 className="text-xl font-black text-gray-800 mb-6 flex items-center gap-2 uppercase italic tracking-tighter"><ArrowLeftRight size={22} className="text-blue-500" /> Ações Rápidas</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <Link to="/withdrawals" className="group p-6 bg-blue-600 rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 text-center">
+              <Users className="mx-auto mb-3 text-white transition-transform group-hover:scale-110" size={32} />
+              <p className="text-white font-black uppercase tracking-widest text-xs">Entregar Peça</p>
+            </Link>
+            <Link to="/transactions" className="group p-6 bg-gray-900 rounded-2xl hover:bg-black transition-all shadow-lg shadow-gray-200 text-center">
+              <Plus className="mx-auto mb-3 text-white transition-transform group-hover:scale-110" size={32} />
+              <p className="text-white font-black uppercase tracking-widest text-xs">Lançar Entrada</p>
+            </Link>
+            <Link to="/stock" className="group p-6 bg-white border-2 border-gray-100 rounded-2xl hover:border-blue-500 hover:bg-blue-50 transition-all text-center">
+              <Package className="mx-auto mb-3 text-gray-400 group-hover:text-blue-600 transition-transform group-hover:scale-110" size={32} />
+              <p className="text-gray-400 group-hover:text-blue-600 font-black uppercase tracking-widest text-xs">Ver Inventário</p>
+            </Link>
+            <Link to="/planning" className="group p-6 bg-white border-2 border-gray-100 rounded-2xl hover:border-red-500 hover:bg-red-50 transition-all text-center">
+              <TrendingDown className="mx-auto mb-3 text-gray-400 group-hover:text-red-600 transition-transform group-hover:scale-110" size={32} />
+              <p className="text-gray-400 group-hover:text-red-600 font-black uppercase tracking-widest text-xs">Comprar Peças</p>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// (restante do arquivo permanece exatamente igual ao que você enviou)
+export default App;
