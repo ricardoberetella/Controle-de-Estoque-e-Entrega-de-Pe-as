@@ -4,18 +4,18 @@ import { Part, Student, Transaction, StudentWithdrawal } from './types';
 import { INITIAL_PARTS, INITIAL_STUDENTS } from './constants';
 
 /**
- * DATABASE SERVICE - FIREBASE REALTIME DATABASE
- * Gerencia a persistência de dados na nuvem.
+ * DATABASE SERVICE (Firebase Realtime Database)
+ * Substitui a simulação local por persistência real na nuvem.
  */
 export const db = {
-  // --- PEÇAS ---
+  // --- PEÇAS (Estoque) ---
   async getParts(): Promise<Part[]> {
     const dbRef = ref(rtdb, 'parts');
     const snapshot = await get(dbRef);
     if (snapshot.exists()) {
       return snapshot.val();
     }
-    // Caso o banco esteja vazio na primeira vez, inicializa com os dados constantes
+    // Se o banco estiver vazio, inicializa com os dados padrão das constantes
     await this.saveParts(INITIAL_PARTS);
     return INITIAL_PARTS;
   },
@@ -31,6 +31,7 @@ export const db = {
     if (snapshot.exists()) {
       return snapshot.val();
     }
+    // Inicializa alunos padrão se não houver dados no Firebase
     await this.saveStudents(INITIAL_STUDENTS);
     return INITIAL_STUDENTS;
   },
@@ -39,7 +40,7 @@ export const db = {
     await set(ref(rtdb, 'students'), students);
   },
 
-  // --- TRANSAÇÕES (ENTRADAS/SAÍDAS) ---
+  // --- TRANSAÇÕES (Histórico de Entradas/Saídas) ---
   async getTransactions(): Promise<Transaction[]> {
     const dbRef = ref(rtdb, 'transactions');
     const snapshot = await get(dbRef);
