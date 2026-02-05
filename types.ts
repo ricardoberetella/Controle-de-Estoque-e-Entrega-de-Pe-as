@@ -32,9 +32,11 @@ export interface Part {
   targetQuantity: number;
 }
 
+// Added 'name' property to StockSummary to reflect available data from Part and fix UI usage errors
 export interface StockSummary {
   partId: string;
   code: string;
+  name: string;
   entries: number;
   exits: number;
   studentExits: number;
