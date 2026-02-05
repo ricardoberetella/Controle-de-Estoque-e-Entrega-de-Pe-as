@@ -1,44 +1,36 @@
 import { db } from "./firebaseConfig";
 import { doc, getDoc, updateDoc, setDoc, arrayUnion } from "firebase/firestore";
 
-// Nome da coleção e documento baseados na sua imagem
-const COLLECTION_NAME = "storage";
-const DOCUMENT_ID = "parts";
+const COLLECTION = "storage";
+const DOCUMENT = "parts";
 
 export const dataService = {
-  // Função para salvar uma nova peça/item
-  async addPart(newPart: any) {
+  async salvarEntrada(dados: any) {
     try {
-      const docRef = doc(db, COLLECTION_NAME, DOCUMENT_ID);
+      const docRef = doc(db, COLLECTION, DOCUMENT);
       const docSnap = await getDoc(docRef);
+
+      const novaPeca = {
+        ...dados,
+        id: Date.now(),
+        data: new Date().toLocaleDateString('pt-BR')
+      };
 
       if (docSnap.exists()) {
-        // Se o documento existe, adiciona ao array 'items'
+        // Se já existe, adiciona no array 'items'
         await updateDoc(docRef, {
-          items: arrayUnion(newPart)
+          items: arrayUnion(novaPeca)
         });
       } else {
-        // Se o documento não existir, cria o primeiro
+        // Se é a primeira vez, cria o documento e o array
         await setDoc(docRef, {
-          items: [newPart]
+          items: [novaPeca]
         });
       }
-      return { success: true };
+      return true;
     } catch (error) {
-      console.error("Erro ao salvar no Firestore:", error);
+      console.error("Erro ao salvar no banco:", error);
       throw error;
-    }
-  },
-
-  // Função para buscar os dados em tempo real ou uma vez
-  async getParts() {
-    try {
-      const docRef = doc(db, COLLECTION_NAME, DOCUMENT_ID);
-      const docSnap = await getDoc(docRef);
-      return docSnap.exists() ? docSnap.data().items : [];
-    } catch (error) {
-      console.error("Erro ao buscar dados:", error);
-      return [];
     }
   }
 };
