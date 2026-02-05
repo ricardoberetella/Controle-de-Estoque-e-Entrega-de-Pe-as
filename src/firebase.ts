@@ -11,5 +11,4 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-// Isso aqui é o que vamos usar para salvar os dados no banco
 export const db_firestore = getFirestore(app);
