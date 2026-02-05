@@ -225,9 +225,12 @@ const App: React.FC = () => {
       <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
         {/* Sidebar */}
         <aside className="hidden md:flex flex-col w-64 bg-gray-900 h-screen sticky top-0 shadow-2xl z-50">
-          <div className="p-8 border-b border-gray-800 bg-gray-950 flex justify-between items-center">
-            <h1 className="text-white font-black text-xl tracking-tighter uppercase italic">Sistema <span className="text-red-600">Usinagem</span></h1>
+          <div className="p-8 border-b border-gray-800 bg-gray-950 flex justify-between items-start">
             <div>
+              <div className="bg-red-600 h-1.5 w-12 mb-4 rounded-full"></div>
+              <h1 className="text-white font-black text-2xl tracking-tighter italic leading-none">SENAI<br/><span className="text-gray-400 font-medium text-[10px] tracking-widest uppercase not-italic">Usinagem</span></h1>
+            </div>
+            <div className="mt-1">
               {syncing ? <Loader2 className="w-4 h-4 text-blue-400 animate-spin" /> : <CloudDownload className="w-4 h-4 text-green-500" />}
             </div>
           </div>
@@ -295,9 +298,25 @@ const Dashboard: React.FC<{ summary: StockSummary[], students: Student[] }> = ({
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      {/* Cabeçalho Simplificado sem Logo */}
-      <header className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-gray-200/50 border border-gray-100">
-        <div className="text-center md:text-left space-y-3">
+      {/* Cabeçalho Proeminente com Logo e Título Oficial */}
+      <header className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-gray-200/50 border border-gray-100 flex flex-col md:flex-row items-center gap-10">
+        <div className="flex-shrink-0">
+          <div className="relative p-6 bg-red-600 rounded-2xl shadow-lg shadow-red-200 group transition-transform hover:scale-105">
+            {/* Logo SENAI customizado para se aproximar do visual clássico */}
+            <div className="flex items-center justify-center">
+               <img 
+                src="https://upload.wikimedia.org/wikipedia/commons/8/8c/SENAI_Logo.svg" 
+                alt="SENAI Logo" 
+                className="h-12 w-auto brightness-0 invert" 
+              />
+            </div>
+            {/* Detalhes de linhas decorativas evocando o logo clássico */}
+            <div className="absolute top-0 left-2 bottom-0 w-px bg-white/20"></div>
+            <div className="absolute top-0 right-2 bottom-0 w-px bg-white/20"></div>
+          </div>
+        </div>
+        
+        <div className="text-center md:text-left flex-1 space-y-3">
           <div className="space-y-1">
             <h2 className="text-3xl md:text-4xl font-black text-gray-900 leading-none uppercase italic tracking-tighter">
               Mecânico de Usinagem Convencional
@@ -472,42 +491,96 @@ const StockInventory: React.FC<{ summary: StockSummary[] }> = ({ summary }) => (
       <h2 className="text-2xl font-black uppercase italic tracking-tighter">Estoque <span className="text-gray-400 not-italic">Consolidado</span></h2>
       <button onClick={() => window.print()} className="bg-gray-100 p-3 rounded-2xl hover:bg-gray-200 transition-colors"><Download size={22} /></button>
     </div>
-    <div className="bg-white rounded-[2rem] shadow-xl shadow-gray-200/50 border overflow-hidden">
-      <table className="w-full text-left">
-        <thead className="bg-gray-900 text-white">
-          <tr>
-            <th className="p-5 uppercase text-[10px] font-black tracking-widest">Tarefa</th>
-            <th className="p-5 text-center uppercase text-[10px] font-black tracking-widest">Entradas</th>
-            <th className="p-5 text-center uppercase text-[10px] font-black tracking-widest">Saídas</th>
-            <th className="p-5 text-center uppercase text-[10px] font-black tracking-widest">Entregues</th>
-            <th className="p-5 text-center uppercase text-[10px] font-black tracking-widest">Saldo</th>
-            <th className="p-5 text-center uppercase text-[10px] font-black tracking-widest">Status</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100">
-          {summary.map(item => (
-            <tr key={item.partId} className="hover:bg-gray-50 transition-colors">
-              <td className="p-5 font-black text-gray-900">{item.partId}</td>
-              <td className="p-5 text-center text-green-600 font-bold">{item.entries}</td>
-              <td className="p-5 text-center text-red-500 font-bold">{item.exits}</td>
-              <td className="p-5 text-center text-orange-500 font-bold">{item.studentExits}</td>
-              <td className={`p-5 text-center font-black text-lg ${item.balance < 5 ? 'text-red-600 bg-red-50' : 'text-blue-700 bg-blue-50/30'}`}>{item.balance}</td>
-              <td className="p-5 text-center">
-                <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${item.situation === 'OK' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                  {item.situation}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="bg-white rounded-[2rem] shadow-xl shadow-gray-200/50 border overflow-hidden"><table className="w-full text-left"><thead className="bg-gray-900 text-white"><tr><th className="p-5 uppercase text-[10px] font-black tracking-widest">Tarefa</th><th className="p-5 text-center uppercase text-[10px] font-black tracking-widest">Entradas</th><th className="p-5 text-center uppercase text-[10px] font-black tracking-widest">Saídas</th><th className="p-5 text-center uppercase text-[10px] font-black tracking-widest">Entregues</th><th className="p-5 text-center uppercase text-[10px] font-black tracking-widest">Saldo</th><th className="p-5 text-center uppercase text-[10px] font-black tracking-widest">Status</th></tr></thead>
+      <tbody className="divide-y divide-gray-100">{summary.map(item => (<tr key={item.partId} className="hover:bg-gray-50 transition-colors"><td className="p-5 font-black text-gray-900">{item.partId}</td><td className="p-5 text-center text-green-600 font-bold">{item.entries}</td><td className="p-5 text-center text-red-500 font-bold">{item.exits}</td><td className="p-5 text-center text-orange-500 font-bold">{item.studentExits}</td><td className={`p-5 text-center font-black text-lg ${item.balance < 5 ? 'text-red-600 bg-red-50' : 'text-blue-700 bg-blue-50/30'}`}>{item.balance}</td><td className="p-5 text-center"><span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${item.situation === 'OK' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700 border border-red-200 shadow-sm'}`}>{item.situation}</span></td></tr>))}</tbody>
+    </table></div>
+  </div>
+);
+
+const Planning: React.FC<{ summary: StockSummary[] }> = ({ summary }) => (
+  <div className="space-y-6">
+    <div className="bg-gray-900 p-10 rounded-[2.5rem] shadow-2xl text-white relative overflow-hidden">
+      <div className="absolute top-0 right-0 p-10 opacity-10"><TrendingDown size={120} /></div>
+      <h2 className="text-4xl font-black uppercase italic tracking-tighter">Compra <span className="text-red-600">Necessária</span></h2>
+      <p className="text-gray-400 font-medium max-w-md mt-2 tracking-wide uppercase text-xs">Planejamento estratégico baseado no déficit para as turmas atuais.</p>
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {summary.filter(s => s.toBuy > 0).map(item => (
+        <div key={item.partId} className="bg-white p-8 rounded-[2rem] shadow-sm border-t-8 border-red-600 flex justify-between items-center group transition-all hover:shadow-xl hover:-translate-y-1">
+          <div><span className="text-3xl font-black text-gray-900 italic uppercase">{item.partId}</span><p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Cód: {item.code}</p></div>
+          <div className="text-right"><span className="text-[10px] font-black text-red-500 block uppercase tracking-widest mb-1">Déficit</span><span className="text-5xl font-black text-red-600 tabular-nums">{item.toBuy}</span></div>
+        </div>
+      ))}
+      {summary.filter(s => s.toBuy > 0).length === 0 && (
+        <div className="col-span-full py-20 text-center bg-white rounded-[2rem] border-2 border-dashed border-gray-100">
+           <Package size={60} className="mx-auto text-gray-200 mb-4" />
+           <p className="font-black text-gray-400 uppercase tracking-[0.2em]">Nenhuma compra pendente</p>
+        </div>
+      )}
     </div>
   </div>
 );
 
-// Placeholder para componentes que não foram enviados na íntegra mas são necessários para o roteamento
-const Transactions = ({ transactions, addTransaction, deleteTransaction, parts }: any) => <div className="p-8 bg-white rounded-3xl border">Página de Movimentações</div>;
-const Planning = ({ summary }: any) => <div className="p-8 bg-white rounded-3xl border">Página de Planejamento</div>;
-const StudentsManager = ({ students, onSave, onDelete }: any) => <div className="p-8 bg-white rounded-3xl border">Gestão de Alunos</div>;
+const StudentsManager: React.FC<{ students: Student[], onSave: (s: any, id?: string) => void, onDelete: (id: string) => void }> = ({ students, onSave, onDelete }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState({ name: '', class: CLASSES[3] });
+  const [selectedClass, setSelectedClass] = useState(CLASSES[3]);
+  const filtered = useMemo(() => students.filter(s => s.class === selectedClass).sort((a, b) => sortAlphabetically(a.name, b.name)), [students, selectedClass]);
+  return (
+    <div className="space-y-6">
+      <div className="bg-white p-6 rounded-3xl border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
+        <h2 className="text-2xl font-black italic uppercase tracking-tighter">Alunos <span className="text-gray-400 not-italic">& Turmas</span></h2>
+        <div className="flex gap-3 w-full md:w-auto">
+          <select className="p-3 border-2 border-gray-50 rounded-2xl bg-gray-50 font-black outline-none focus:border-blue-500 transition-all text-sm" value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)}>{CLASSES.map(c => <option key={c} value={c}>{c}</option>)}</select>
+          <button onClick={() => { setEditingId(null); setFormData({ name: '', class: selectedClass }); setIsModalOpen(true); }} className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black shadow-lg shadow-blue-100 flex items-center gap-2 uppercase tracking-widest text-xs"><UserPlus size={20} /> Adicionar</button>
+        </div>
+      </div>
+      <div className="bg-white rounded-[2rem] border overflow-hidden shadow-sm">
+        <table className="w-full text-left">
+          <tbody className="divide-y divide-gray-100">
+            {filtered.map(s => (<tr key={s.id} className="hover:bg-gray-50 transition-colors"><td className="p-5 font-bold text-gray-700">{s.name}</td><td className="p-5 text-center"><div className="flex justify-end gap-3"><button onClick={() => { setEditingId(s.id); setFormData({ name: s.name, class: s.class }); setIsModalOpen(true); }} className="p-2.5 text-blue-600 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors"><Edit2 size={16} /></button><button onClick={() => onDelete(s.id)} className="p-2.5 text-red-600 bg-red-50 rounded-xl hover:bg-red-100 transition-colors"><Trash2 size={16} /></button></div></td></tr>))}
+          </tbody>
+        </table>
+      </div>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingId ? "Editar Aluno" : "Novo Aluno"}>
+        <form onSubmit={(e) => { e.preventDefault(); onSave(formData, editingId || undefined); setIsModalOpen(false); }} className="space-y-5">
+          <div className="space-y-1"><label className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Nome Completo</label><input type="text" placeholder="Nome do estudante" required className="w-full p-4 border-2 border-gray-50 rounded-2xl bg-gray-50 outline-none focus:border-blue-600 transition-all font-bold" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} /></div>
+          <div className="space-y-1"><label className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Turma / Período</label><select className="w-full p-4 border-2 border-gray-50 rounded-2xl bg-gray-50 font-black outline-none focus:border-blue-600 transition-all" value={formData.class} onChange={e => setFormData({ ...formData, class: e.target.value })}>{CLASSES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+          <button type="submit" className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg shadow-blue-100 uppercase tracking-widest text-sm transition-all hover:bg-blue-700">Salvar Aluno</button>
+        </form>
+      </Modal>
+    </div>
+  );
+};
+
+const Transactions: React.FC<{ transactions: Transaction[], addTransaction: (t: any) => void, deleteTransaction: (id: string) => void, parts: Part[] }> = ({ transactions, addTransaction, deleteTransaction, parts }) => {
+  const [showAdd, setShowAdd] = useState(false);
+  const [formData, setFormData] = useState({ date: new Date().toISOString().split('T')[0], type: TransactionType.ENTRY, description: '', partId: parts[0]?.id || '', quantity: 0 });
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center bg-white p-6 rounded-3xl border border-gray-100">
+        <h2 className="text-2xl font-black italic uppercase tracking-tighter">Movimentação <span className="text-gray-400 not-italic">de Estoque</span></h2>
+        <button onClick={() => setShowAdd(!showAdd)} className={`px-6 py-3 rounded-2xl font-black transition-all flex items-center gap-2 uppercase tracking-widest text-xs ${showAdd ? 'bg-gray-100 text-gray-600' : 'bg-gray-900 text-white shadow-xl shadow-gray-200'}`}>{showAdd ? <X size={20} /> : <Plus size={20} />}</button>
+      </div>
+      {showAdd && (
+        <form onSubmit={(e) => { e.preventDefault(); addTransaction(formData); setShowAdd(false); }} className="bg-white p-8 rounded-[2rem] border-2 border-blue-500 grid md:grid-cols-5 gap-5 items-end animate-in slide-in-from-top-4 shadow-2xl">
+          <div className="space-y-1"><label className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Data</label><input type="date" required className="w-full p-3 border-2 border-gray-50 rounded-xl bg-gray-50 font-bold" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} /></div>
+          <div className="space-y-1"><label className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Operação</label><select className="w-full p-3 border-2 border-gray-50 rounded-xl bg-gray-50 font-bold" value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value as TransactionType })}><option value={TransactionType.ENTRY}>Entrada (+)</option><option value={TransactionType.EXIT}>Saída (-)</option></select></div>
+          <div className="space-y-1"><label className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Referência</label><input type="text" placeholder="NF, Memorando..." required className="w-full p-3 border-2 border-gray-50 rounded-xl bg-gray-50 font-bold" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} /></div>
+          <div className="space-y-1"><label className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Tarefa</label><select className="w-full p-3 border-2 border-gray-50 rounded-xl bg-gray-50 font-bold" value={formData.partId} onChange={e => setFormData({ ...formData, partId: e.target.value })}>{parts.map(p => <option key={p.id} value={p.id}>{p.id} - {p.name}</option>)}</select></div>
+          <div className="flex gap-3">
+            <div className="space-y-1 flex-1"><label className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Qtd</label><input type="number" required className="w-full p-3 border-2 border-gray-50 rounded-xl bg-gray-50 font-bold" value={formData.quantity} onChange={e => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })} /></div>
+            <button type="submit" className="bg-green-600 text-white px-6 py-3 rounded-xl font-black shadow-lg shadow-green-100 transition-all hover:bg-green-700">OK</button>
+          </div>
+        </form>
+      )}
+      <div className="bg-white rounded-[2rem] shadow-sm border overflow-hidden"><table className="w-full text-left">
+        <thead className="bg-gray-50 border-b uppercase text-[10px] font-black text-gray-400 tracking-widest"><tr><th className="p-5">Data</th><th className="p-5">Tipo</th><th className="p-5">Tarefa</th><th className="p-5 text-right">Quantidade</th><th className="p-5 text-center">Estornar</th></tr></thead>
+        <tbody>{transactions.map(t => (<tr key={t.id} className="hover:bg-gray-50 border-b last:border-0 transition-colors"><td className="p-5 text-xs font-bold text-gray-400">{formatDate(t.date)}</td><td className="p-5"><span className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest ${t.type === TransactionType.ENTRY ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{t.type}</span></td><td className="p-5 font-black text-gray-900">{t.partId}</td><td className="p-5 text-right font-mono font-black text-lg">{t.quantity}</td><td className="p-5 text-center"><button onClick={() => deleteTransaction(t.id)} className="text-gray-300 hover:text-red-600 p-2.5 transition-colors bg-gray-50 rounded-xl"><Trash2 size={16} /></button></td></tr>))}</tbody>
+      </table></div>
+    </div>
+  );
+};
 
 export default App;
