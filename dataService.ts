@@ -2,7 +2,7 @@ import { Part, Student, Transaction, StudentWithdrawal } from './types';
 import { db_firestore } from './firebase'; 
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
-async function saveToFirebase(collectionName: string, data: any[]) {
+async function saveToFirebase(collectionName: string, data: any[]): Promise<void> {
   try {
     await setDoc(doc(db_firestore, 'storage', collectionName), { 
       items: data,
@@ -13,26 +13,43 @@ async function saveToFirebase(collectionName: string, data: any[]) {
   }
 }
 
-async function getFromFirebase(collectionName: string, initialData: any[]) {
+async function getFromFirebase<T>(collectionName: string, initialData: T[]): Promise<T[]> {
   try {
     const docRef = doc(db_firestore, 'storage', collectionName);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      return docSnap.data().items;
+      return docSnap.data().items as T[];
     }
     return initialData;
   } catch (error) {
+    console.error(`Erro ao buscar ${collectionName}:`, error);
     return initialData;
   }
 }
 
 export const db = {
-  async getParts() { return getFromFirebase('parts', []); },
-  async saveParts(parts: Part[]) { await saveToFirebase('parts', parts); },
-  async getStudents() { return getFromFirebase('students', []); },
-  async saveStudents(students: Student[]) { await saveToFirebase('students', students); },
-  async getTransactions() { return getFromFirebase('transactions', []); },
-  async saveTransactions(transactions: Transaction[]) { await saveToFirebase('transactions', transactions); },
-  async getWithdrawals() { return getFromFirebase('withdrawals', []); },
-  async saveWithdrawals(withdrawals: StudentWithdrawal[]) { await saveToFirebase('withdrawals', withdrawals); }
+  async getParts(): Promise<Part[]> { 
+    return getFromFirebase<Part>('parts', []); 
+  },
+  async saveParts(parts: Part[]): Promise<void> { 
+    await saveToFirebase('parts', parts); 
+  },
+  async getStudents(): Promise<Student[]> { 
+    return getFromFirebase<Student>('students', []); 
+  },
+  async saveStudents(students: Student[]): Promise<void> { 
+    await saveToFirebase('students', students); 
+  },
+  async getTransactions(): Promise<Transaction[]> { 
+    return getFromFirebase<Transaction>('transactions', []); 
+  },
+  async saveTransactions(transactions: Transaction[]): Promise<void> { 
+    await saveToFirebase('transactions', transactions); 
+  },
+  async getWithdrawals(): Promise<StudentWithdrawal[]> { 
+    return getFromFirebase<StudentWithdrawal>('withdrawals', []); 
+  },
+  async saveWithdrawals(withdrawals: StudentWithdrawal[]): Promise<void> { 
+    await saveToFirebase('withdrawals', withdrawals); 
+  }
 };
