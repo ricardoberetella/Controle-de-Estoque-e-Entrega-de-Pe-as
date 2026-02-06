@@ -1,12 +1,10 @@
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { HashRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { 
-  Package, 
-  Users, 
-  ArrowLeftRight, 
-  TrendingDown, 
+import {
+  Package,
+  Users,
+  ArrowLeftRight,
+  TrendingDown,
   LayoutDashboard,
   Plus,
   Trash2,
@@ -22,11 +20,11 @@ import {
   Download,
   Settings
 } from 'lucide-react';
-import { 
-  Transaction, 
-  TransactionType, 
-  Student, 
-  StudentWithdrawal, 
+import {
+  Transaction,
+  TransactionType,
+  Student,
+  StudentWithdrawal,
   StockSummary,
   Part
 } from './types';
@@ -60,8 +58,8 @@ const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: string; chi
   );
 };
 
-const ConfirmModal: React.FC<{ 
-  isOpen: boolean; onClose: () => void; onConfirm: () => void; title: string; message: string 
+const ConfirmModal: React.FC<{
+  isOpen: boolean; onClose: () => void; onConfirm: () => void; title: string; message: string
 }> = ({ isOpen, onClose, onConfirm, title, message }) => {
   if (!isOpen) return null;
   return (
@@ -79,14 +77,119 @@ const ConfirmModal: React.FC<{
   );
 };
 
+// --- Login Screen (APENAS ADIÇÃO, NÃO ALTERA O RESTO DO SISTEMA) ---
+
+const SENHA_FIXA = "ianes662";
+
+const LoginScreen: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
+  const [senha, setSenha] = useState("");
+  const [erro, setErro] = useState<string | null>(null);
+
+  const seeSENAILogo = (
+    <div className="flex items-center justify-center">
+      <svg width="240" height="70" viewBox="0 0 350 90" xmlns="http://www.w3.org/2000/svg" aria-label="SENAI">
+        <rect x="0" y="0" width="350" height="90" fill="#E30613" />
+        <g fill="#FFFFFF">
+          <rect x="8" y="15" width="22" height="5" />
+          <rect x="8" y="30" width="22" height="5" />
+          <rect x="8" y="45" width="22" height="5" />
+          <rect x="8" y="60" width="22" height="5" />
+          <rect x="8" y="75" width="22" height="5" />
+          <rect x="320" y="15" width="22" height="5" />
+          <rect x="320" y="30" width="22" height="5" />
+          <rect x="320" y="45" width="22" height="5" />
+          <rect x="320" y="60" width="22" height="5" />
+          <rect x="320" y="75" width="22" height="5" />
+        </g>
+        <text
+          x="175"
+          y="52"
+          fill="#FFFFFF"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: 900, fontSize: '72px' }}
+        >
+          SENAI
+        </text>
+      </svg>
+    </div>
+  );
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErro(null);
+
+    if (senha.trim() === SENHA_FIXA) {
+      try { sessionStorage.setItem("muc_auth", "1"); } catch { /* ignore */ }
+      onSuccess();
+      return;
+    }
+
+    setErro("Senha inválida.");
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6">
+      <div className="w-full max-w-[520px] bg-white rounded-[2.5rem] shadow-2xl shadow-gray-200/70 border border-gray-100 overflow-hidden">
+        <div className="h-2 bg-red-600" />
+
+        <div className="p-10 text-center">
+          {seeSENAILogo}
+
+          <div className="mt-7 space-y-2">
+            <h2 className="text-2xl md:text-3xl font-black text-gray-900 uppercase italic tracking-tighter">
+              Mecânico de Usinagem
+            </h2>
+            <h2 className="text-2xl md:text-3xl font-black text-gray-900 uppercase italic tracking-tighter">
+              Convencional
+            </h2>
+            <p className="text-sm md:text-base font-black text-gray-500 uppercase tracking-widest mt-3">
+              Controle de Estoque e Entrega de Peças
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="mt-10 space-y-4">
+            <div className="text-left">
+              <label className="block text-[10px] font-black uppercase text-gray-400 tracking-widest mb-2">
+                Senha de acesso
+              </label>
+              <input
+                type="password"
+                value={senha}
+                onChange={(e) => { setSenha(e.target.value); if (erro) setErro(null); }}
+                className="w-full px-5 py-4 rounded-2xl border-2 border-gray-100 bg-gray-50 outline-none focus:bg-white focus:border-red-500 transition-all font-bold tracking-widest text-center"
+                placeholder="••••••"
+                autoFocus
+              />
+              {erro && <p className="mt-2 text-xs font-bold text-red-600">{erro}</p>}
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-red-600 hover:bg-red-700 transition-colors text-white font-black py-4 rounded-2xl shadow-lg shadow-red-100 uppercase tracking-[0.35em]"
+            >
+              SENHA
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // --- Main App ---
 
 const App: React.FC = () => {
+  // ✅ login simples (não mexe no resto). Libera o sistema somente após senha correta.
+  const [authed, setAuthed] = useState<boolean>(() => {
+    try { return sessionStorage.getItem("muc_auth") === "1"; } catch { return false; }
+  });
+
   const [students, setStudents] = useState<Student[]>([]);
   const [parts, setParts] = useState<Part[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [withdrawals, setWithdrawals] = useState<StudentWithdrawal[]>([]);
-  
+
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [confirmConfig, setConfirmConfig] = useState<{ isOpen: boolean; onConfirm: () => void; title: string; message: string } | null>(null);
@@ -112,13 +215,15 @@ const App: React.FC = () => {
     loadAllData();
   }, []);
 
-  const sortedStudents = useMemo(() => 
-    [...students].sort((a, b) => sortAlphabetically(a.name, b.name)), 
-  [students]);
+  const sortedStudents = useMemo(() =>
+    [...students].sort((a, b) => sortAlphabetically(a.name, b.name)),
+    [students]
+  );
 
-  const sortedParts = useMemo(() => 
-    [...parts].sort((a, b) => sortTaskIds(a.id, b.id)), 
-  [parts]);
+  const sortedParts = useMemo(() =>
+    [...parts].sort((a, b) => sortTaskIds(a.id, b.id)),
+    [parts]
+  );
 
   const syncWithCloud = async (action: () => Promise<unknown>) => {
     setSyncing(true);
@@ -130,14 +235,14 @@ const App: React.FC = () => {
   };
 
   const handleSaveStudent = async (s: Omit<Student, 'id'>, id?: string) => {
-    const studentToSave = id 
+    const studentToSave = id
       ? { ...students.find(st => st.id === id), ...s } as Student
       : { id: generateId(), ...s } as Student;
-      
-    const updated = id 
+
+    const updated = id
       ? students.map(st => st.id === id ? studentToSave : st)
       : [...students, studentToSave];
-      
+
     setStudents(updated);
     await syncWithCloud(() => db.saveStudent(studentToSave));
   };
@@ -175,14 +280,14 @@ const App: React.FC = () => {
   };
 
   const handleSaveTransaction = async (t: Omit<Transaction, 'id'>, id?: string) => {
-    const transactionToSave = id 
+    const transactionToSave = id
       ? { ...transactions.find(tr => tr.id === id), ...t } as Transaction
       : { ...t, id: generateId() } as Transaction;
 
-    const updated = id 
+    const updated = id
       ? transactions.map(trans => trans.id === id ? transactionToSave : trans)
       : [...transactions, transactionToSave];
-      
+
     setTransactions(updated);
     await syncWithCloud(() => db.saveTransaction(transactionToSave));
   };
@@ -201,7 +306,7 @@ const App: React.FC = () => {
 
   const toggleWithdrawal = async (studentId: string, partId: string) => {
     const existing = withdrawals.find(w => w.studentId === studentId && w.partId === partId);
-    
+
     if (existing) {
       setWithdrawals(prev => prev.filter(w => w !== existing));
       await syncWithCloud(() => db.deleteWithdrawal(studentId, partId));
@@ -218,25 +323,30 @@ const App: React.FC = () => {
       const exits = transactions.filter(t => t.partId === part.id && t.type === TransactionType.EXIT).reduce((sum, t) => sum + t.quantity, 0);
       const studentExits = withdrawals.filter(w => w.partId === part.id).length;
       const balance = entries - exits - studentExits;
-      
+
       const totalStudents = students.length;
       const studentsWaiting = Math.max(0, totalStudents - studentExits);
       const toBuy = Math.max(0, studentsWaiting - balance);
-      
-      return { 
-        partId: part.id, 
-        code: part.code, 
-        entries, 
-        exits, 
-        studentExits, 
-        balance, 
-        situation: toBuy === 0 ? 'OK' : 'COMPRAR', 
-        toBuy 
+
+      return {
+        partId: part.id,
+        code: part.code,
+        entries,
+        exits,
+        studentExits,
+        balance,
+        situation: toBuy === 0 ? 'OK' : 'COMPRAR',
+        toBuy
       } as StockSummary;
     });
   }, [transactions, withdrawals, sortedParts, students.length]);
 
   if (loading) return <LoadingOverlay />;
+
+  // ✅ trava o sistema até digitar a senha
+  if (!authed) {
+    return <LoginScreen onSuccess={() => setAuthed(true)} />;
+  }
 
   return (
     <Router>
@@ -245,7 +355,7 @@ const App: React.FC = () => {
         <aside className="hidden md:flex flex-col w-64 bg-gray-900 h-screen sticky top-0 shadow-2xl z-50">
           <div className="p-8 border-b border-gray-800 bg-gray-950 flex justify-center items-center">
             <h1 className="text-white font-black text-2xl tracking-tighter italic leading-none text-center">
-              SENAI<br/>
+              SENAI<br />
               <span className="text-gray-400 font-medium text-[10px] tracking-[0.2em] uppercase not-italic">MUC</span>
             </h1>
           </div>
@@ -275,10 +385,10 @@ const App: React.FC = () => {
           </Routes>
         </main>
 
-        <ConfirmModal 
+        <ConfirmModal
           isOpen={!!confirmConfig?.isOpen}
           onClose={() => setConfirmConfig(null)}
-          onConfirm={confirmConfig?.onConfirm || (() => {})}
+          onConfirm={confirmConfig?.onConfirm || (() => { })}
           title={confirmConfig?.title || ""}
           message={confirmConfig?.message || ""}
         />
@@ -317,34 +427,34 @@ const Dashboard: React.FC<{ summary: StockSummary[], students: Student[] }> = ({
       <header className="bg-white p-10 rounded-[2.5rem] shadow-xl shadow-gray-200/50 border border-gray-100 flex flex-col items-center gap-6 text-center">
         <div className="flex-shrink-0">
           <div className="flex items-center justify-center transition-transform hover:scale-105">
-             <svg width="240" height="70" viewBox="0 0 350 90" xmlns="http://www.w3.org/2000/svg">
-                <rect x="0" y="0" width="350" height="90" fill="#E30613" />
-                <g fill="#FFFFFF">
-                  <rect x="8" y="15" width="22" height="5" />
-                  <rect x="8" y="30" width="22" height="5" />
-                  <rect x="8" y="45" width="22" height="5" />
-                  <rect x="8" y="60" width="22" height="5" />
-                  <rect x="8" y="75" width="22" height="5" />
-                  <rect x="320" y="15" width="22" height="5" />
-                  <rect x="320" y="30" width="22" height="5" />
-                  <rect x="320" y="45" width="22" height="5" />
-                  <rect x="320" y="60" width="22" height="5" />
-                  <rect x="320" y="75" width="22" height="5" />
-                </g>
-                <text 
-                  x="175" 
-                  y="52" 
-                  fill="#FFFFFF" 
-                  textAnchor="middle" 
-                  dominantBaseline="middle" 
-                  style={{fontFamily: 'Arial Black, sans-serif', fontWeight: 900, fontSize: '72px'}}
-                >
-                  SENAI
-                </text>
-              </svg>
+            <svg width="240" height="70" viewBox="0 0 350 90" xmlns="http://www.w3.org/2000/svg">
+              <rect x="0" y="0" width="350" height="90" fill="#E30613" />
+              <g fill="#FFFFFF">
+                <rect x="8" y="15" width="22" height="5" />
+                <rect x="8" y="30" width="22" height="5" />
+                <rect x="8" y="45" width="22" height="5" />
+                <rect x="8" y="60" width="22" height="5" />
+                <rect x="8" y="75" width="22" height="5" />
+                <rect x="320" y="15" width="22" height="5" />
+                <rect x="320" y="30" width="22" height="5" />
+                <rect x="320" y="45" width="22" height="5" />
+                <rect x="320" y="60" width="22" height="5" />
+                <rect x="320" y="75" width="22" height="5" />
+              </g>
+              <text
+                x="175"
+                y="52"
+                fill="#FFFFFF"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                style={{ fontFamily: 'Arial Black, sans-serif', fontWeight: 900, fontSize: '72px' }}
+              >
+                SENAI
+              </text>
+            </svg>
           </div>
         </div>
-        
+
         <div className="space-y-4">
           <div className="flex flex-col items-center">
             <h2 className="text-3xl md:text-5xl font-black text-gray-900 leading-[0.95] uppercase italic tracking-tighter">
@@ -406,7 +516,7 @@ const Dashboard: React.FC<{ summary: StockSummary[], students: Student[] }> = ({
             )}
           </div>
         </div>
-        
+
         <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100">
           <h3 className="text-xl font-black text-gray-800 mb-6 flex items-center gap-2 uppercase italic tracking-tighter"><ArrowLeftRight size={22} className="text-blue-500" /> Ações Rápidas</h3>
           <div className="grid grid-cols-2 gap-4">
@@ -442,11 +552,11 @@ const MaterialWithdrawals: React.FC<{
 }> = ({ withdrawals, toggleWithdrawal, students, parts, summary }) => {
   const [selectedClass, setSelectedClass] = useState(CLASSES[0]);
   const [searchTerm, setSearchTerm] = useState('');
-  
-  const filteredStudents = useMemo(() => 
+
+  const filteredStudents = useMemo(() =>
     students
-      .filter(s => s.class === selectedClass && s.name.toLowerCase().includes(searchTerm.toLowerCase())), 
-  [students, selectedClass, searchTerm]);
+      .filter(s => s.class === selectedClass && s.name.toLowerCase().includes(searchTerm.toLowerCase())),
+    [students, selectedClass, searchTerm]);
 
   const isWithdrawn = (sid: string, pid: string) => withdrawals.some(w => w.studentId === sid && w.partId === pid);
 
@@ -493,7 +603,7 @@ const MaterialWithdrawals: React.FC<{
                   const active = isWithdrawn(student.id, part.id);
                   const partSummary = summary.find(s => s.partId === part.id);
                   const outOfStock = !active && partSummary && partSummary.balance <= 0;
-                  
+
                   return (
                     <td key={part.id} className={`p-2 border-r border-gray-100 text-center cursor-pointer transition-colors ${active ? 'bg-green-100/50' : 'hover:bg-blue-50'} ${outOfStock ? 'bg-red-50/30 cursor-not-allowed opacity-50' : ''}`} onClick={() => handleToggle(student.id, part.id)}>
                       <div className={`mx-auto h-7 w-7 rounded-xl border-2 transition-all flex items-center justify-center ${active ? 'bg-green-500 border-green-600 shadow-md shadow-green-100' : outOfStock ? 'border-red-200 bg-white' : 'border-dashed border-gray-300'}`}>
@@ -570,8 +680,8 @@ const Planning: React.FC<{ summary: StockSummary[] }> = ({ summary }) => (
       ))}
       {summary.filter(s => s.toBuy > 0).length === 0 && (
         <div className="col-span-full py-20 text-center bg-white rounded-[2rem] border-2 border-dashed border-gray-100">
-           <Package size={60} className="mx-auto text-gray-200 mb-4" />
-           <p className="font-black text-gray-400 uppercase tracking-[0.2em]">Nenhuma compra pendente</p>
+          <Package size={60} className="mx-auto text-gray-200 mb-4" />
+          <p className="font-black text-gray-400 uppercase tracking-[0.2em]">Nenhuma compra pendente</p>
         </div>
       )}
     </div>
@@ -615,7 +725,7 @@ const Transactions: React.FC<{ transactions: Transaction[], saveTransaction: (t:
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ date: new Date().toISOString().split('T')[0], type: TransactionType.ENTRY, description: '', partId: parts[0]?.id || '', quantity: 0 });
-  
+
   useEffect(() => {
     if (parts.length > 0 && !formData.partId) {
       setFormData(prev => ({ ...prev, partId: parts[0].id }));
