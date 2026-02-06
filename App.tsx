@@ -311,20 +311,29 @@ const Dashboard: React.FC<{ summary: StockSummary[], students: Student[] }> = ({
              <svg width="240" height="70" viewBox="0 0 350 90" xmlns="http://www.w3.org/2000/svg">
                 <rect x="0" y="0" width="350" height="90" fill="#E30613" />
                 <g fill="#FFFFFF">
-                  <rect x="5" y="10" width="30" height="6" />
-                  <rect x="5" y="26" width="30" height="6" />
-                  <rect x="5" y="42" width="30" height="6" />
-                  <rect x="5" y="58" width="30" height="6" />
-                  <rect x="5" y="74" width="30" height="6" />
-                  <rect x="315" y="10" width="30" height="6" />
-                  <rect x="315" y="26" width="30" height="6" />
-                  <rect x="315" y="42" width="30" height="6" />
-                  <rect x="315" y="58" width="30" height="6" />
-                  <rect x="315" y="74" width="30" height="6" />
+                  {/* Stripes improved for visual balance */}
+                  <rect x="8" y="15" width="22" height="5" />
+                  <rect x="8" y="30" width="22" height="5" />
+                  <rect x="8" y="45" width="22" height="5" />
+                  <rect x="8" y="60" width="22" height="5" />
+                  <rect x="8" y="75" width="22" height="5" />
+                  
+                  <rect x="320" y="15" width="22" height="5" />
+                  <rect x="320" y="30" width="22" height="5" />
+                  <rect x="320" y="45" width="22" height="5" />
+                  <rect x="320" y="60" width="22" height="5" />
+                  <rect x="320" y="75" width="22" height="5" />
                 </g>
-                <g fill="#FFFFFF" style={{fontFamily: 'Arial Black, sans-serif', fontWeight: 900, fontSize: '65px'}}>
-                  <text x="45" y="68">SENAI</text>
-                </g>
+                <text 
+                  x="175" 
+                  y="52" 
+                  fill="#FFFFFF" 
+                  textAnchor="middle" 
+                  dominantBaseline="middle" 
+                  style={{fontFamily: 'Arial Black, sans-serif', fontWeight: 900, fontSize: '72px'}}
+                >
+                  SENAI
+                </text>
               </svg>
           </div>
         </div>
